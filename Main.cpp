@@ -197,7 +197,7 @@ int main()
     VertexArrayObject* VAOS[6] = { &vaoTop, &vaoBot, &vaoLeft, &vaoRight, &vaoFront, &vaoBack }; 
 
     Rcube<12>* rubikcube = new Rcube<12>();
-    int num = 4;
+    int num = 11;
 
     struct MovData {
         bool turn;
@@ -369,6 +369,7 @@ void drawFace(Texture* faceTextures[7], Colors C, VertexArrayObject& vao, bool d
             break;
         default:
             std::cout << "ERROR DRawFACE" << std::endl; 
+            return;
     }
     vao.bind();
     glDrawArrays(GL_TRIANGLES, 0, 6);

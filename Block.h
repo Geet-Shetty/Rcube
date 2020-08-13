@@ -4,7 +4,14 @@
 #include <GLFW/glfw3.h>
 #include <glm\ext\vector_float3.hpp>
 
-struct index { int x; int y; int z; };
+struct index { 
+    union {
+        struct {
+            int x; int y; int z;
+        };
+        int num[3]; 
+    };
+};
 
 enum Colors { BLUE = 0, RED = 1, GREEN = 2, YELLOW = 3 ,ORANGE = 4, WHITE = 5, VOID = 6 };
 
@@ -84,145 +91,198 @@ private:
         model = glm::translate(model, -trans);
     }
 
-    void copyColors(Colors* temp, Colors* copy) {
-        for (int i = 0; i < 6; i++) {
-            *(temp + i) = *(copy + i);
+    void cornersConstructor(index i, index p, Colors x, Colors y, Colors z) {
+        cube[i].draw = true;
+        cube[i].colors[p.x] = x;
+        cube[i].colors[p.y] = y;
+        cube[i].colors[p.z] = z;
+    }
+
+    void edgesConstructor(index i, int px, int py, Colors x, Colors y) {
+        cube[i].draw = true;
+        cube[i].colors[px] = x;
+        cube[i].colors[py] = y;
+    }
+
+    void middlesConstructor(index i, int px, Colors x) {
+        cube[i].draw = true;
+        cube[i].colors[px] = x;
+    }
+
+    void transpose(int column, int columnPos, int colorPos) {
+        index i1, i2;
+        int inc1 = 0, inc2 = 0;
+        switch (columnPos) {
+        case 0:
+            i1 = { column, 0, 0 };
+            i2 = { column, 0, 0 };
+            inc1 = 1, inc2 = 2;
+            break;
+        case 1:
+            i1 = { 0, column, 0 };
+            i2 = { 0, column, 0 };
+            inc1 = 0, inc2 = 2;
+            break;
+        case 2:
+            i1 = { 0, 0, column };
+            i2 = { 0, 0, column };
+            inc1 = 0, inc2 = 1;
+            break;
+        default:
+            return;
         }
+        for (int i = 0; i < N; i++) {
+            for (int j = i; j < N; j++) {
+                Colors temp = cube[i1].colors[colorPos];
+                cube[i1].colors[colorPos] = cube[i2].colors[colorPos];
+                cube[i2].colors[colorPos] = temp;
+                i1.num[inc2] = j;
+                i2.num[inc1] = j;
+            }
+            i1.num[inc1] = i;
+            i2.num[inc2] = i;
+        }
+    }
+
+    void flip(int column, int columnPos, int colorPos) {
+        index i1, i2;
+        int inc1 = 0, inc2 = 0;
+        switch (columnPos) {
+        case 0:
+            i1 = { column, 0, 0 };
+            i2 = { column, 0, N - 1 };
+            inc1 = 1, inc2 = 2;
+            break;
+        case 1:
+            i1 = { 0, column, 0 };
+            i2 = { 0, column, N - 1 };
+            inc1 = 0, inc2 = 2;
+            break;
+        case 2:
+            i1 = { 0, 0, column };
+            i2 = { 0, N - 1, column };
+            inc1 = 0, inc2 = 1;
+            break;
+        default:
+            return;
+        }
+        for (int i = 0; i < N; i++) {
+            i1.num[inc1] = i;
+            i2.num[inc1] = i;
+            for (int j = 0; j < N / 2; j++) { 
+                i1.num[inc2] = j;
+                i2.num[inc2] = N - 1 - j;
+                Colors temp = cube[i1].colors[colorPos];
+                cube[i1].colors[colorPos] = cube[i2].colors[colorPos];
+                cube[i2].colors[colorPos] = temp;
+            }
+        }
+    }
+
+    void rotateMatrixC(int column, int comlumnPos, int colorPos) {
+        transpose(column, comlumnPos, colorPos);
+        flip(column, comlumnPos, colorPos); 
+    }
+
+    void rotateMatrixCCW(int column, int comlumnPos, int colorPos) {
+        flip(column, comlumnPos, colorPos);
+        transpose(column, comlumnPos, colorPos);
     }
 
 public:
     array3d<Block, N> cube;
     float move = (cube.size - 1) * .25;
     float dRot = 0.0f;
-    bool current = false;
+    bool current = false; 
     bool cF = false;
-    bool cS = false;
-    bool r = false; 
+    bool cS = false; 
+    bool r = false;
 
     Rcube() {
 
         // corners
         {
             // F Bo L 
-            cube[{0, 0, 0}].draw = true;
-            cube[{0, 0, 0}].colors[1] = GREEN;
-            cube[{0, 0, 0}].colors[2] = ORANGE;
-            cube[{0, 0, 0}].colors[4] = WHITE;
+            cornersConstructor({ 0, 0, 0 }, { 1, 2, 4 }, GREEN, ORANGE, WHITE);
 
             // Ba Bo L
-            cube[{0, 0, N - 1}].draw = true;
-            cube[{0, 0, N - 1}].colors[1] = GREEN;
-            cube[{0, 0, N - 1}].colors[2] = ORANGE;
-            cube[{0, 0, N - 1}].colors[5] = YELLOW;
+            cornersConstructor({ 0, 0, N - 1 }, { 1, 2, 5}, GREEN, ORANGE, YELLOW);
 
             // F T L 
-            cube[{0, N - 1, 0}].draw = true;
-            cube[{0, N - 1, 0}].colors[0] = BLUE;
-            cube[{0, N - 1, 0}].colors[2] = ORANGE;
-            cube[{0, N - 1, 0}].colors[4] = WHITE;
+            cornersConstructor({ 0, N - 1, 0 }, { 0, 2, 4 }, BLUE, ORANGE, WHITE);
 
             // Ba T L
-            cube[{0, N - 1, N - 1}].draw = true;
-            cube[{0, N - 1, N - 1}].colors[0] = BLUE;
-            cube[{0, N - 1, N - 1}].colors[2] = ORANGE;
-            cube[{0, N - 1, N - 1}].colors[5] = YELLOW;
+            cornersConstructor({ 0, N - 1, N - 1 }, { 0, 2, 5 }, BLUE, ORANGE, YELLOW);
 
             // F Bo R
-            cube[{N - 1, 0, 0}].draw = true;
-            cube[{N - 1, 0, 0}].colors[1] = GREEN;
-            cube[{N - 1, 0, 0}].colors[3] = RED;
-            cube[{N - 1, 0, 0}].colors[4] = WHITE;
+            cornersConstructor({ N - 1, 0, 0 }, { 1, 3, 4 }, GREEN, RED, WHITE);
 
             // Ba Bo R
-            cube[{N - 1, 0, N - 1}].draw = true;
-            cube[{N - 1, 0, N - 1}].colors[1] = GREEN;
-            cube[{N - 1, 0, N - 1}].colors[3] = RED;
-            cube[{N - 1, 0, N - 1}].colors[5] = YELLOW;
+            cornersConstructor({ N - 1, 0, N - 1 }, { 1, 3, 5 }, GREEN, RED, YELLOW);
 
             // F T R
-            cube[{N - 1, N - 1, 0}].draw = true;
-            cube[{N - 1, N - 1, 0}].colors[0] = BLUE;
-            cube[{N - 1, N - 1, 0}].colors[3] = RED;
-            cube[{N - 1, N - 1, 0}].colors[4] = WHITE;
+            cornersConstructor({ N - 1, N - 1, 0 }, { 0, 3, 4 }, BLUE, RED, WHITE);
 
             // Ba T R
-            cube[{N - 1, N - 1, N - 1}].draw = true;
-            cube[{N - 1, N - 1, N - 1}].colors[0] = BLUE;
-            cube[{N - 1, N - 1, N - 1}].colors[3] = RED;
-            cube[{N - 1, N - 1, N - 1}].colors[5] = YELLOW;
+            cornersConstructor({ N - 1, N - 1, N - 1 }, { 0, 3, 5 }, BLUE, RED, YELLOW);
         }
 
         // middles and edges 
         for (int i = 1; i < N - 1; i++) {
             // F Bo edge 
-            cube[{i, 0, 0}].draw = true;
-            cube[{i, 0, 0}].colors[1] = GREEN;
-            cube[{i, 0, 0}].colors[4] = WHITE;
-            // F T edge
-            cube[{i, N - 1, 0}].draw = true;
-            cube[{i, N - 1, 0}].colors[0] = BLUE;
-            cube[{i, N - 1, 0}].colors[4] = WHITE;
-            // Ba Bo edge
-            cube[{i, 0, N - 1}].draw = true;
-            cube[{i, 0, N - 1}].colors[1] = GREEN;
-            cube[{i, 0, N - 1}].colors[5] = YELLOW;
-            // Ba T edge 
-            cube[{i, N - 1, N - 1}].draw = true;
-            cube[{i, N - 1, N - 1}].colors[0] = BLUE;
-            cube[{i, N - 1, N - 1}].colors[5] = YELLOW;
-            // F L edge
-            cube[{0, i, 0}].draw = true;
-            cube[{0, i, 0}].colors[2] = ORANGE;
-            cube[{0, i, 0}].colors[4] = WHITE;
-            // Ba L edge
-            cube[{0, i, N - 1}].draw = true;
-            cube[{0, i, N - 1}].colors[2] = ORANGE;
-            cube[{0, i, N - 1}].colors[5] = YELLOW;
-            // F R edge
-            cube[{N - 1, i, 0}].draw = true;
-            cube[{N - 1, i, 0}].colors[3] = RED;
-            cube[{N - 1, i, 0}].colors[4] = WHITE;
-            // Ba R edge 
-            cube[{N - 1, i, N - 1}].draw = true;
-            cube[{N - 1, i, N - 1}].colors[3] = RED;
-            cube[{N - 1, i, N - 1}].colors[5] = YELLOW;
-            // L Bo edge 
-            cube[{0, 0, i}].draw = true;
-            cube[{0, 0, i}].colors[1] = GREEN;
-            cube[{0, 0, i}].colors[2] = ORANGE;
-            // R Bo edge 
-            cube[{N - 1, 0, i}].draw = true;
-            cube[{N - 1, 0, i}].colors[1] = GREEN;
-            cube[{N - 1, 0, i}].colors[3] = RED;
-            // L T edge 
-            cube[{0, N - 1, i}].draw = true;
-            cube[{0, N - 1, i}].colors[0] = BLUE;
-            cube[{0, N - 1, i}].colors[2] = ORANGE;
-            // R T edge 
-            cube[{N - 1, N - 1, i}].draw = true;
-            cube[{N - 1, N - 1, i}].colors[0] = BLUE;
-            cube[{N - 1, N - 1, i}].colors[3] = RED;
+            edgesConstructor({ i, 0, 0 }, 1, 4, GREEN, WHITE);
 
+            // F T edge
+            edgesConstructor({ i, N - 1, 0 }, 0, 4, BLUE, WHITE);
+
+            // Ba Bo edge
+            edgesConstructor({ i, 0, N - 1 }, 1, 5, GREEN, YELLOW);
+
+            // Ba T edge 
+            edgesConstructor({ i, N - 1, N - 1 }, 0, 5, BLUE, YELLOW);
+
+            // F L edge
+            edgesConstructor({ 0, i, 0 }, 2, 4, ORANGE, WHITE);
+
+            // Ba L edge
+            edgesConstructor({ 0, i, N - 1 }, 2, 5, ORANGE, YELLOW);
+
+            // F R edge
+            edgesConstructor({ N - 1, i, 0 }, 3, 4, RED, WHITE);
+
+            // Ba R edge 
+            edgesConstructor({ N - 1, i, N - 1 }, 3, 5, RED, YELLOW);
+
+            // L Bo edge 
+            edgesConstructor({ 0, 0, i }, 1, 2, GREEN, ORANGE);
+
+            // R Bo edge 
+            edgesConstructor({ N - 1, 0, i }, 1, 3, GREEN, RED);
+
+            // L T edge 
+            edgesConstructor({ 0, N - 1, i }, 0, 2, BLUE, ORANGE);
+
+            // R T edge 
+            edgesConstructor({ N - 1, N - 1, i }, 0, 3, BLUE, RED);
 
             for (int j = 1; j < N - 1; j++) {
-                // Bo Middle 
-                cube[{i, 0, j}].draw = true;
-                cube[{i, 0, j}].colors[1] = GREEN;
                 // T Middle 
-                cube[{i, N - 1, j}].draw = true;
-                cube[{i, N - 1, j}].colors[0] = BLUE;
-                // F Middle 
-                cube[{i, j, 0}].draw = true;
-                cube[{i, j, 0}].colors[4] = WHITE;
-                // Ba Middle 
-                cube[{i, j, N - 1}].draw = true;
-                cube[{i, j, N - 1}].colors[5] = YELLOW;
+                middlesConstructor({ i, N - 1, j }, 0, BLUE);
+
+                // Bo Middle 
+                middlesConstructor({ i, 0, j }, 1, GREEN);
+
                 // L Middle
-                cube[{0, i, j}].draw = true;
-                cube[{0, i, j}].colors[2] = ORANGE;
+                middlesConstructor({ 0, i, j }, 2, ORANGE);
+
                 // R  Middle
-                cube[{N - 1, i, j}].draw = true;
-                cube[{N - 1, i, j}].colors[3] = RED;
+                middlesConstructor({ N - 1, i, j }, 3, RED);
+
+                // F Middle 
+                middlesConstructor({ i, j, 0 }, 4, WHITE);
+
+                // Ba Middle
+                middlesConstructor({ i, j, N - 1 }, 5, YELLOW);
             }
         }
 
@@ -241,36 +301,10 @@ public:
         }
         switch (D) {
             case countercw:
-                for (int i = 0; i < N; i++) {
-                    for (int j = i; j < N; j++) {
-                        Colors temp = cube[{column, i, j}].colors[colorPos];
-                        cube[{column, i, j}].colors[colorPos] = cube[{column, j, i}].colors[colorPos];
-                        cube[{column, j, i}].colors[colorPos] = temp;
-                    }
-                }
-                for (int i = 0; i < N; i++) {
-                    for (int j = 0; j < N / 2; j++) {
-                        Colors temp = cube[{column, i, j}].colors[colorPos];
-                        cube[{column, i, j}].colors[colorPos] = cube[{column, i, N - 1 - j}].colors[colorPos];
-                        cube[{column, i, N - 1 - j}].colors[colorPos] = temp;
-                    }
-                }
+                rotateMatrixC(column, 0, colorPos);
                 break;
             case clockwise:
-                for (int i = 0; i < N; i++) {
-                    for (int j = 0; j < N / 2; j++) {
-                        Colors temp = cube[{column, i, j}].colors[colorPos];
-                        cube[{column, i, j}].colors[colorPos] = cube[{column, i, N - 1 - j}].colors[colorPos];
-                        cube[{column, i, N - 1 - j}].colors[colorPos] = temp;
-                    }
-                }
-                for (int i = 0; i < N; i++) {
-                    for (int j = i; j < N; j++) {
-                        Colors temp = cube[{column, i, j}].colors[colorPos];
-                        cube[{column, i, j}].colors[colorPos] = cube[{column, j, i}].colors[colorPos];
-                        cube[{column, j, i}].colors[colorPos] = temp;
-                    }
-                }
+                rotateMatrixCCW(column, 0, colorPos); 
                 break;
         }
     }
@@ -288,41 +322,15 @@ public:
         }
         switch (D) {
             case countercw:
-                for (int i = 0; i < N; i++) {
-                    for (int j = 0; j < N / 2; j++) {
-                        Colors temp = cube[{i, j, column}].colors[colorPos];
-                        cube[{i, j, column}].colors[colorPos] = cube[{i, N - 1 - j, column}].colors[colorPos];
-                        cube[{i, N - 1 - j, column}].colors[colorPos] = temp;
-                    }
-                }
-                for (int i = 0; i < N; i++) {
-                    for (int j = i; j < N; j++) {
-                        Colors temp = cube[{i, j, column}].colors[colorPos];
-                        cube[{i, j, column}].colors[colorPos] = cube[{j, i, column}].colors[colorPos];
-                        cube[{j, i, column}].colors[colorPos] = temp;
-                    }
-                }
+                rotateMatrixCCW(column, 2, colorPos); 
                 break;
             case clockwise:
-                for (int i = 0; i < N; i++) {
-                    for (int j = i; j < N; j++) {
-                        Colors temp = cube[{i, j, column}].colors[colorPos];
-                        cube[{i, j, column}].colors[colorPos] = cube[{j, i, column}].colors[colorPos];
-                        cube[{j, i, column}].colors[colorPos] = temp;
-                    }
-                }
-                for (int i = 0; i < N; i++) {
-                    for (int j = 0; j < N / 2; j++) {
-                        Colors temp = cube[{i, j, column}].colors[colorPos];
-                        cube[{i, j, column}].colors[colorPos] = cube[{i, N - 1 - j, column}].colors[colorPos];
-                        cube[{i, N - 1 - j, column}].colors[colorPos] = temp;
-                    }
-                }
+                rotateMatrixC(column, 2, colorPos); 
                 break;
         }
     }
 
-    void colorsSideR(int column, Direction D) {
+    void colorsSideR(int column, Direction D)  {
         int colorPos;
         if (column == 0) {
             colorPos = 1;
@@ -335,36 +343,10 @@ public:
         }
         switch (D) {
             case countercw:
-                for (int i = 0; i < N; i++) {
-                    for (int j = 0; j < N / 2; j++) {
-                        Colors temp = cube[{i, column, j}].colors[colorPos];
-                        cube[{i, column, j}].colors[colorPos] = cube[{i, column, N - 1 - j}].colors[colorPos];
-                        cube[{i, column, N - 1 - j}].colors[colorPos] = temp;
-                    }
-                }
-                for (int i = 0; i < N; i++) {
-                    for (int j = i; j < N; j++) {
-                        Colors temp = cube[{i, column, j}].colors[colorPos];
-                        cube[{i, column, j}].colors[colorPos] = cube[{j, column, i}].colors[colorPos];
-                        cube[{j, column, i}].colors[colorPos] = temp;
-                    }
-                }
+                rotateMatrixCCW(column, 1, colorPos); 
                 break;
             case clockwise:
-                for (int i = 0; i < N; i++) {
-                    for (int j = i; j < N; j++) {
-                        Colors temp = cube[{i, column, j}].colors[colorPos];
-                        cube[{i, column, j}].colors[colorPos] = cube[{j, column, i}].colors[colorPos];
-                        cube[{j, column, i}].colors[colorPos] = temp;
-                    }
-                }
-                for (int i = 0; i < N; i++) {
-                    for (int j = 0; j < N / 2; j++) {
-                        Colors temp = cube[{i, column, j}].colors[colorPos];
-                        cube[{i, column, j}].colors[colorPos] = cube[{i, column, N - 1 - j}].colors[colorPos];
-                        cube[{i, column, N - 1 - j}].colors[colorPos] = temp;
-                    }
-                }
+                rotateMatrixC(column, 1, colorPos); 
                 break; 
         }
     }
@@ -375,7 +357,6 @@ public:
         switch (D) {
         case countercw:
             std::cout << "CC" << std::endl;
-
             for (int i = 0; i < N; i++) {
                 temp[i] = cube[{column, i, 0}].colors[4];
             }
