@@ -196,8 +196,8 @@ int main()
     Texture* faceTextures[7] = { &blue, &green, &orange, &red, &white, &yellow, &black };
     VertexArrayObject* VAOS[6] = { &vaoTop, &vaoBot, &vaoLeft, &vaoRight, &vaoFront, &vaoBack }; 
 
-    Rcube<12>* rubikcube = new Rcube<12>();
-    int num = 11;
+    Rcube<3>* rubikcube = new Rcube<3>();
+    int num = 2;
 
     struct MovData {
         bool turn;

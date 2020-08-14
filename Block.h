@@ -17,6 +17,11 @@ enum Colors { BLUE = 0, RED = 1, GREEN = 2, YELLOW = 3 ,ORANGE = 4, WHITE = 5, V
 
 enum Direction { clockwise, countercw };
 
+struct info {
+    index i; 
+    int inc1, inc2; 
+};
+
 template<class T, int N>
 class array3d {
 public:
@@ -109,72 +114,53 @@ private:
         cube[i].colors[px] = x;
     }
 
-    void transpose(int column, int columnPos, int colorPos) {
-        index i1, i2;
-        int inc1 = 0, inc2 = 0;
+    info createIndex(int column, int columnPos, int num) {
+        info i;
         switch (columnPos) {
         case 0:
-            i1 = { column, 0, 0 };
-            i2 = { column, 0, 0 };
-            inc1 = 1, inc2 = 2;
+            i.i = { column + num, 0, 0 };
+            i.inc1 = 1, i.inc2 = 2;
             break;
         case 1:
-            i1 = { 0, column, 0 };
-            i2 = { 0, column, 0 };
-            inc1 = 0, inc2 = 2;
+            i.i = { 0, column + num, 0 };
+            i.inc1 = 0, i.inc2 = 2;
             break;
         case 2:
-            i1 = { 0, 0, column };
-            i2 = { 0, 0, column };
-            inc1 = 0, inc2 = 1;
+            i.i = { 0, 0, column + num };
+            i.inc1 = 0, i.inc2 = 1;
             break;
-        default:
-            return;
         }
+        return i;
+    }
+
+    void transpose(int column, int columnPos, int colorPos) {
+        info data1 = createIndex(column, columnPos, 0);
+        index data2 = data1.i; 
         for (int i = 0; i < N; i++) {
             for (int j = i; j < N; j++) {
-                Colors temp = cube[i1].colors[colorPos];
-                cube[i1].colors[colorPos] = cube[i2].colors[colorPos];
-                cube[i2].colors[colorPos] = temp;
-                i1.num[inc2] = j;
-                i2.num[inc1] = j;
+                Colors temp = cube[data1.i].colors[colorPos];
+                cube[data1.i].colors[colorPos] = cube[data2].colors[colorPos];
+                cube[data2].colors[colorPos] = temp;
+                data1.i.num[data1.inc2] = j;
+                data2.num[data1.inc1] = j;
             }
-            i1.num[inc1] = i;
-            i2.num[inc2] = i;
+            data1.i.num[data1.inc1] = i;
+            data2.num[data1.inc2] = i;
         }
     }
 
     void flip(int column, int columnPos, int colorPos) {
-        index i1, i2;
-        int inc1 = 0, inc2 = 0;
-        switch (columnPos) {
-        case 0:
-            i1 = { column, 0, 0 };
-            i2 = { column, 0, N - 1 };
-            inc1 = 1, inc2 = 2;
-            break;
-        case 1:
-            i1 = { 0, column, 0 };
-            i2 = { 0, column, N - 1 };
-            inc1 = 0, inc2 = 2;
-            break;
-        case 2:
-            i1 = { 0, 0, column };
-            i2 = { 0, N - 1, column };
-            inc1 = 0, inc2 = 1;
-            break;
-        default:
-            return;
-        }
+        info data1 = createIndex(column, columnPos, 0); 
+        index data2 = data1.i; 
         for (int i = 0; i < N; i++) {
-            i1.num[inc1] = i;
-            i2.num[inc1] = i;
+            data1.i.num[data1.inc1] = i;
+            data2.num[data1.inc1] = i;
             for (int j = 0; j < N / 2; j++) { 
-                i1.num[inc2] = j;
-                i2.num[inc2] = N - 1 - j;
-                Colors temp = cube[i1].colors[colorPos];
-                cube[i1].colors[colorPos] = cube[i2].colors[colorPos];
-                cube[i2].colors[colorPos] = temp;
+                data1.i.num[data1.inc2] = j;
+                data2.num[data1.inc2] = N - 1 - j;
+                Colors temp = cube[data1.i].colors[colorPos];
+                cube[data1.i].colors[colorPos] = cube[data2].colors[colorPos];
+                cube[data2].colors[colorPos] = temp;
             }
         }
     }
@@ -187,6 +173,20 @@ private:
     void rotateMatrixCCW(int column, int comlumnPos, int colorPos) {
         flip(column, comlumnPos, colorPos);
         transpose(column, comlumnPos, colorPos);
+    }
+
+    void rotateRing(index i1, index i2, index i3, index i4, int colorPos1, int colorPos2, int colorPos3, int colorPos4) {
+    }
+
+    inline void drawN(index i, bool b) {
+        cube[i].draw = b; 
+    }
+
+    inline void drawV(index i, bool b) {
+        cube[i].drawVoid = b; 
+    }
+
+    void drawVoid2(int column, int columnPos) {
     }
 
 public:
@@ -329,7 +329,7 @@ public:
                 break;
         }
     }
-
+     
     void colorsSideR(int column, Direction D)  {
         int colorPos;
         if (column == 0) {
