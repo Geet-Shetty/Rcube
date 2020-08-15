@@ -106,7 +106,7 @@ private:
     void edgesConstructor(index i, int px, int py, Colors x, Colors y) {
         cube[i].draw = true;
         cube[i].colors[px] = x;
-        cube[i].colors[py] = y;
+cube[i].colors[py] = y;
     }
 
     void middlesConstructor(index i, int px, Colors x) {
@@ -135,7 +135,7 @@ private:
 
     void transpose(int column, int columnPos, int colorPos) {
         info data1 = createIndex(column, columnPos, 0);
-        index data2 = data1.i; 
+        index data2 = data1.i;
         for (int i = 0; i < N; i++) {
             for (int j = i; j < N; j++) {
                 Colors temp = cube[data1.i].colors[colorPos];
@@ -150,12 +150,12 @@ private:
     }
 
     void flip(int column, int columnPos, int colorPos) {
-        info data1 = createIndex(column, columnPos, 0); 
-        index data2 = data1.i; 
+        info data1 = createIndex(column, columnPos, 0);
+        index data2 = data1.i;
         for (int i = 0; i < N; i++) {
             data1.i.num[data1.inc1] = i;
             data2.num[data1.inc1] = i;
-            for (int j = 0; j < N / 2; j++) { 
+            for (int j = 0; j < N / 2; j++) {
                 data1.i.num[data1.inc2] = j;
                 data2.num[data1.inc2] = N - 1 - j;
                 Colors temp = cube[data1.i].colors[colorPos];
@@ -167,7 +167,7 @@ private:
 
     void rotateMatrixC(int column, int comlumnPos, int colorPos) {
         transpose(column, comlumnPos, colorPos);
-        flip(column, comlumnPos, colorPos); 
+        flip(column, comlumnPos, colorPos);
     }
 
     void rotateMatrixCCW(int column, int comlumnPos, int colorPos) {
@@ -179,16 +179,106 @@ private:
     }
 
     inline void drawN(index i, bool b) {
-        cube[i].draw = b; 
+        cube[i].draw = b;
     }
 
     inline void drawV(index i, bool b) {
-        cube[i].drawVoid = b; 
+        cube[i].drawVoid = b;
     }
 
-    void drawVoid2(int column, int columnPos) {
+    void draw2(int column, int columnPos, int num, bool b, int start, int end, void (Rcube::*f)(index, bool)) {
+        info data1 = createIndex(column, columnPos, 0);
+        index data2 = data1.i;
+        int compare = data1.inc1 + data1.inc2;
+        data2.num[compare == 1 ? 2 : compare == 2 ? 1 : 0] += num;
+        for (int i = start; i < end; i++) {
+            data1.i.num[data1.inc1]++;
+            data2.num[data1.inc1]++;
+            for (int j = start; j < end; j++) {
+                data1.i.num[data1.inc2]++;
+                data2.num[data1.inc2]++;
+                (this->*f)(data1.i, b);
+                (this->*f)(data2, b);
+            }
+        }
     }
 
+    void draw3(int column, int columnPos, int num1, int num2, bool b, int start, int end, void (Rcube::*f1)(index, bool), void (Rcube::*f2)(index, bool)) {
+        info data1 = createIndex(column, columnPos, 0);
+        index data2 = data1.i; 
+        index data3 = data1.i;
+        int compare = data1.inc1 + data1.inc2;
+        data2.num[compare == 1 ? 2 : compare == 2 ? 1 : 0] += num1;
+        data3.num[compare == 1 ? 2 : compare == 2 ? 1 : 0] += num2;
+        for (int i = start; i < end; i++) {
+            data1.i.num[data1.inc1] = i;
+            data2.num[data1.inc1] = i;
+            data3.num[data1.inc1] = i;
+            for (int j = start; j < end; j++) {
+                data1.i.num[data1.inc2] = j;
+                data2.num[data1.inc2] = j;
+                data3.num[data1.inc2] = j;
+                (this->*f1)(data1.i, b);
+                (this->*f1)(data2, b);
+                (this->*f2)(data3, b);
+            }
+        }
+    }
+
+    void selectRotation(Direction D, glm::mat4& model, glm::vec3 r, glm::vec3 t, float angle) {
+        switch (D) {
+        case clockwise:
+            rotate(model, r, t, -angle);
+            break;
+        case countercw:
+            rotate(model, r, t, angle);
+            break;
+        }
+    }
+
+    void pieceTurn(int current, int column, int columnPos, bool& b, glm::mat4 model, Direction D, void (Rcube::* f1)(int, Direction), void (Rcube::* f2)(int, Direction)) {
+        if (current == column) {
+            this->current = true;
+            if (dRot == 1) {
+                if (column > 0 && column < cube.size - 1) {
+                    draw3(column, columnPos, -1, 1, true, 1, cube.size - 1, &Rcube::drawN, &Rcube::drawN);
+                    draw3(column, columnPos, -1, 1, true, 0, cube.size, &Rcube::drawV, &Rcube::drawV);
+                }
+                else if (column == 0) {
+                    draw3(column, columnPos, 1, 1, true, 0, cube.size, &Rcube::drawV, &Rcube::drawN);
+                }
+                else {
+                    draw3(column, columnPos, -1, -1, true, 0, cube.size, &Rcube::drawV, &Rcube::drawN);
+
+                }
+            }
+        }
+        else if (dRot >= 90) {
+            (this->*f1)(column, D);
+            (this->*f2)(column, D);
+            dRot = 0;
+            b = false;
+            this->current = false;
+            if (column > 0 && column < cube.size - 1) {
+                if (column > 1 && column < cube.size - 2) {
+                    draw3(column, columnPos, -1, 1, false, 1, cube.size - 1, &Rcube::drawN, &Rcube::drawN);
+                }
+                else if (column == 1) {
+                    draw2(column, columnPos, 1, false, 1, cube.size - 1, &Rcube::drawN);
+                }
+                else {
+                    draw2(column, columnPos, -1, false, 1, cube.size - 1, &Rcube::drawN);
+                }
+                draw3(column, columnPos, -1, 1, false, 0, cube.size, &Rcube::drawV, &Rcube::drawV);
+            }
+            else if (column == 0) {
+                draw2(column, columnPos, 1, false, 0, cube.size, &Rcube::drawV);
+            }
+            else {
+                draw2(column, columnPos, -1, false, 0, cube.size, &Rcube::drawV);
+            }
+        }
+    }
 public:
     array3d<Block, N> cube;
     float move = (cube.size - 1) * .25;
@@ -560,331 +650,21 @@ public:
     }
 
     void columnF(int current, int column, glm::mat4& model, Direction D) { // height 
-        if (current == column) {
-            this->current = true; 
-            switch (D) {
-                case clockwise:
-                    rotate(model, glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(0, move, -move), -dRot);
-                    break;
-                case countercw:
-                    rotate(model, glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(0, move, -move), dRot);
-                    break;
-            }
-            if (dRot == 1) {
-                if (!(column == 0 || column == cube.size - 1)) {
-                    for (int i = 1; i < cube.size - 1; i++) {
-                        for (int j = 1; j < cube.size - 1; j++) {
-                            cube[{column, i, j}].draw = true;
-                            cube[{column - 1, i, j}].draw = true;
-                            cube[{column + 1, i, j}].draw = true;
-                        }
-                    }
-
-                    for (int i = 0; i < cube.size; i++) {
-                        for (int j = 0; j < cube.size; j++) {
-                            cube[{column, i, j}].drawVoid = true;
-                            cube[{column - 1, i, j}].drawVoid = true;
-                            cube[{column + 1, i, j}].drawVoid = true;
-                        }
-                    }
-                }
-                else if (column == 0) {
-                    for (int i = 0; i < cube.size; i++) {
-                        for (int j = 0; j < cube.size; j++) {
-                            cube[{column, i, j}].drawVoid = true;
-                            cube[{column + 1, i, j}].drawVoid = true;
-                            cube[{column + 1, i, j}].draw = true;
-                        }
-                    }
-                }
-                else {
-                    for (int i = 0; i < cube.size; i++) {
-                        for (int j = 0; j < cube.size; j++) {
-                            cube[{column, i, j}].drawVoid = true;
-                            cube[{column - 1, i, j}].drawVoid = true;
-                            cube[{column - 1, i, j}].draw = true;
-                        }
-                    }
-                }
-            }
-        }
-        else if (dRot >= 90) {
-            colorsSideF(column, D);
-            colorsRingF(column, D);
-            dRot = 0;
-            cF = false;
-            this->current = false;
-            if (!(column == 0 || column == cube.size - 1)) {
-
-                if (column > 1 && column < cube.size - 2) {
-                    for (int i = 1; i < cube.size - 1; i++) {
-                        for (int j = 1; j < cube.size - 1; j++) {
-                            cube[{column, i, j}].draw = false;
-                            cube[{column - 1, i, j}].draw = false;
-                            cube[{column + 1, i, j}].draw = false;
-                        }
-                    }
-                }
-                else if (column == 1) {
-                    for (int i = 1; i < cube.size - 1; i++) {
-                        for (int j = 1; j < cube.size - 1; j++) {
-                            cube[{column, i, j}].draw = false;
-                            cube[{column + 1, i, j}].draw = false;
-                        }
-                    }
-                } else {
-                    for (int i = 1; i < cube.size - 1; i++) {
-                        for (int j = 1; j < cube.size - 1; j++) {
-                            cube[{column, i, j}].draw = false;
-                            cube[{column - 1, i, j}].draw = false;
-                        }
-                    }
-                }
-
-                for (int i = 0; i < cube.size; i++) {
-                    for (int j = 0; j < cube.size; j++) {
-                        cube[{column, i, j}].drawVoid = false;
-                        cube[{column - 1, i, j}].drawVoid = false;
-                        cube[{column + 1, i, j}].drawVoid = false;
-                    }
-                }
-            }
-            else if (column == 0) {
-                for (int i = 0; i < cube.size; i++) {
-                    for (int j = 0; j < cube.size; j++) {
-                        cube[{column, i, j}].drawVoid = false;
-                        cube[{column + 1, i, j}].drawVoid = false;
-                    }
-                }
-            }
-            else {
-                for (int i = 0; i < cube.size; i++) {
-                    for (int j = 0; j < cube.size; j++) {
-                        cube[{column, i, j}].drawVoid = false;
-                        cube[{column - 1, i, j}].drawVoid = false;
-                    }
-                }
-            }
-        }
+        if(current == column)
+            selectRotation(D, model, glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(0, move, -move), dRot);
+        pieceTurn(current, column, 0, cF, model, D, &Rcube::colorsSideF, &Rcube::colorsRingF);
     }
 
-    void columnS(int current, int column, glm::mat4& model, Direction D) { // height 
-        if (current == column) {
-            this->current = true;
-            switch (D) {
-                case clockwise:
-                    rotate(model, glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(move, move, 0), -dRot);
-                    break;
-                case countercw:
-                    rotate(model, glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(move, move, 0), dRot);
-                    break;
-            }
-            if (dRot == 1) {
-                if (!(column == 0 || column == cube.size - 1)) {
-                    for (int i = 1; i < cube.size - 1; i++) {
-                        for (int j = 1; j < cube.size - 1; j++) {
-                            cube[{i, j, column}].draw = true;
-                            cube[{i, j, column - 1}].draw = true;
-                            cube[{i, j, column + 1}].draw = true;
-                        }
-                    }
-
-                    for (int i = 0; i < cube.size; i++) {
-                        for (int j = 0; j < cube.size; j++) {
-                            cube[{i, j, column}].drawVoid = true;
-                            cube[{i, j, column - 1}].drawVoid = true;
-                            cube[{i, j, column + 1}].drawVoid = true;
-                        }
-                    }
-                }
-                else if (column == 0) {
-                    for (int i = 0; i < cube.size; i++) {
-                        for (int j = 0; j < cube.size; j++) {
-                            cube[{i, j, column}].drawVoid = true;
-                            cube[{i, j, column + 1}].drawVoid = true;
-                            cube[{i, j, column + 1}].draw = true;
-                        }
-                    }
-                }
-                else {
-                    for (int i = 0; i < cube.size; i++) {
-                        for (int j = 0; j < cube.size; j++) {
-                            cube[{i, j, column}].drawVoid = true;
-                            cube[{i, j, column - 1}].drawVoid = true;
-                            cube[{i, j, column - 1}].draw = true;
-                        }
-                    }
-                }
-            }
-        }
-        else if (dRot >= 90) {
-            colorsSideS(column, D);
-            colorsRingS(column, D); 
-            dRot = 0;
-            cS = false;
-            this->current = false;
-            if (!(column == 0 || column == cube.size - 1)) {
-                if (column > 1 && column < cube.size - 2) {
-                    for (int i = 1; i < cube.size - 1; i++) {
-                        for (int j = 1; j < cube.size - 1; j++) {
-                            cube[{i, j, column}].draw = false;
-                            cube[{i, j, column - 1}].draw = false;
-                            cube[{i, j, column + 1}].draw = false;
-                        }
-                    }
-                }
-                else if (column == 1) {
-                    for (int i = 1; i < cube.size - 1; i++) {
-                        for (int j = 1; j < cube.size - 1; j++) {
-                            cube[{i, j, column}].draw = false;
-                            cube[{i, j, column + 1}].draw = false;
-                        }
-                    }
-                }
-                else {
-                    for (int i = 1; i < cube.size - 1; i++) {
-                        for (int j = 1; j < cube.size - 1; j++) {
-                            cube[{i, j, column}].draw = false;
-                            cube[{i, j, column - 1}].draw = false;
-                        }
-                    }
-                }
-
-                for (int i = 0; i < cube.size; i++) {
-                    for (int j = 0; j < cube.size; j++) {
-                        cube[{i, j, column}].drawVoid = false;
-                        cube[{i, j, column - 1}].drawVoid = false;
-                        cube[{i, j, column + 1}].drawVoid = false;
-                    }
-                }
-            }
-            else if (column == 0) {
-                for (int i = 0; i < cube.size; i++) {
-                    for (int j = 0; j < cube.size; j++) {
-                        cube[{i, j, column}].drawVoid = false;
-                        cube[{i, j, column + 1}].drawVoid = false;
-                    }
-                }
-            }
-            else {
-                for (int i = 0; i < cube.size; i++) {
-                    for (int j = 0; j < cube.size; j++) {
-                        cube[{i, j, column}].drawVoid = false;
-                        cube[{i, j, column - 1}].drawVoid = false;
-                    }
-                }
-            }
-        }
+    void columnS(int current, int column, glm::mat4& model, Direction D) { // height
+        if (current == column)
+            selectRotation(D, model, glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(move, move, 0), dRot);
+        pieceTurn(current, column, 2, cS, model, D, &Rcube::colorsSideS, &Rcube::colorsRingS);
     }
 
     void row(int current, int column, glm::mat4& model, Direction D)  { // width 
-        if (current == column) {
-            this->current = true; 
-            switch (D) {
-            case clockwise:
-                rotate(model, glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(move, 0, -move), -dRot);
-                break;
-            case countercw:
-                rotate(model, glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(move, 0, -move), dRot);
-                break;
-            }
-            if (dRot == 1) {
-                if (!(column == 0 || column == cube.size - 1)) {
-                    for (int i = 1; i < cube.size - 1; i++) {
-                        for (int j = 1; j < cube.size - 1; j++) {
-                            cube[{i, column, j}].draw = true;
-                            cube[{i, column - 1, j}].draw = true;
-                            cube[{i, column + 1, j}].draw = true;
-                        }
-                    }
-
-                    for (int i = 0; i < cube.size; i++) {
-                        for (int j = 0; j < cube.size; j++) {
-                            cube[{i, column, j}].drawVoid = true;
-                            cube[{i, column - 1, j}].drawVoid = true;
-                            cube[{i, column + 1, j}].drawVoid = true;
-                        }
-                    }
-                }
-                else if (column == 0) {
-                    for (int i = 0; i < cube.size; i++) {
-                        for (int j = 0; j < cube.size; j++) {
-                            cube[{i, column, j}].drawVoid = true;
-                            cube[{i, column + 1, j}].drawVoid = true;
-                            cube[{i, column + 1, j}].draw = true;
-                        }
-                    }
-                }
-                else {
-                    for (int i = 0; i < cube.size; i++) {
-                        for (int j = 0; j < cube.size; j++) {
-                            cube[{i, column, j}].drawVoid = true;
-                            cube[{i, column - 1, j}].drawVoid = true;
-                            cube[{i, column - 1, j}].draw = true;
-                        }
-                    }
-                }
-            }
-        }
-        else if (dRot >= 90) {
-            colorsSideR(column, D);
-            colorsRingR(column, D); 
-            dRot = 0;
-            r = false;
-            this->current = false;
-            if (!(column == 0 || column == cube.size - 1)) {
-                if (column > 1 && column < cube.size - 2) {
-                    for (int i = 1; i < cube.size - 1; i++) {
-                        for (int j = 1; j < cube.size - 1; j++) {
-                            cube[{i, column, j}].draw = false;
-                            cube[{i, column - 1, j}].draw = false;
-                            cube[{i, column + 1, j}].draw = false;
-                        }
-                    }
-                }
-                else if (column == 1) {
-                    for (int i = 1; i < cube.size - 1; i++) {
-                        for (int j = 1; j < cube.size - 1; j++) {
-                            cube[{i, column, j}].draw = false; 
-                            cube[{i, column + 1, j}].draw = false;
-                        }
-                    }
-                }
-                else {
-                    for (int i = 1; i < cube.size - 1; i++) {
-                        for (int j = 1; j < cube.size - 1; j++) {
-                            cube[{i, column, j}].draw = false;
-                            cube[{i, column - 1, j}].draw = false;
-                        }
-                    }
-                }
-
-                for (int i = 0; i < cube.size; i++) {
-                    for (int j = 0; j < cube.size; j++) {
-                        cube[{i, column, j}].drawVoid = false;
-                        cube[{i, column - 1, j}].drawVoid = false;
-                        cube[{i, column + 1, j}].drawVoid = false;
-                    }
-                }
-            }
-            else if (column == 0) {
-                for (int i = 0; i < cube.size; i++) {
-                    for (int j = 0; j < cube.size; j++) {
-                        cube[{i, column, j}].drawVoid = false;
-                        cube[{i, column + 1, j}].drawVoid = false;
-                    }
-                }
-            }
-            else {
-                for (int i = 0; i < cube.size; i++) {
-                    for (int j = 0; j < cube.size; j++) {
-                        cube[{i, column, j}].drawVoid = false;
-                        cube[{i, column - 1, j}].drawVoid = false;
-                    }
-                }
-            }
-
-        }
+        if (current == column)
+            selectRotation(D, model, glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(move, 0, -move), dRot);
+        pieceTurn(current, column, 1, r, model, D, &Rcube::colorsSideR, &Rcube::colorsRingR);
     }
 
     void updateAngle() {
