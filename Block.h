@@ -106,7 +106,7 @@ private:
     void edgesConstructor(index i, int px, int py, Colors x, Colors y) {
         cube[i].draw = true;
         cube[i].colors[px] = x;
-cube[i].colors[py] = y;
+        cube[i].colors[py] = y;
     }
 
     void middlesConstructor(index i, int px, Colors x) {
@@ -159,15 +159,15 @@ cube[i].colors[py] = y;
         info data1 = createIndex(column, columnPos, 0);
         index data2 = data1.i;
         for (int i = 0; i < N; i++) {
+            data1.i.num[data1.inc1] = i;
+            data2.num[data1.inc2] = i;
             for (int j = i; j < N; j++) {
+                data1.i.num[data1.inc2] = j;
+                data2.num[data1.inc1] = j;
                 Colors temp = cube[data1.i].colors[colorPos];
                 cube[data1.i].colors[colorPos] = cube[data2].colors[colorPos];
                 cube[data2].colors[colorPos] = temp;
-                data1.i.num[data1.inc2] = j;
-                data2.num[data1.inc1] = j;
             }
-            data1.i.num[data1.inc1] = i;
-            data2.num[data1.inc2] = i;
         }
     }
 
@@ -213,11 +213,11 @@ cube[i].colors[py] = y;
         int compare = data1.inc1 + data1.inc2;
         data2.num[compare == 1 ? 2 : compare == 2 ? 1 : 0] += num;
         for (int i = start; i < end; i++) {
-            data1.i.num[data1.inc1]++;
-            data2.num[data1.inc1]++;
+            data1.i.num[data1.inc1] = i;
+            data2.num[data1.inc1] = i;
             for (int j = start; j < end; j++) {
-                data1.i.num[data1.inc2]++;
-                data2.num[data1.inc2]++;
+                data1.i.num[data1.inc2] = j;
+                data2.num[data1.inc2] = j;
                 (this->*f)(data1.i, b);
                 (this->*f)(data2, b);
             }
@@ -305,10 +305,7 @@ public:
     array3d<Block, N> cube;
     float move = (cube.size - 1) * .25;
     float dRot = 0.0f;
-    bool current = false; 
-    bool cF = false;
-    bool cS = false; 
-    bool r = false;
+    bool current = false, cF = false, cS = false, r = false;
 
     Rcube() {
 
