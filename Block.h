@@ -133,28 +133,6 @@ private:
         return i;
     }
 
-    info createInfo(int column, int columnPos, int iPos, int i, int numPos, int num) {
-        info r = createIndex(column, columnPos, 0);
-        switch (iPos) {
-        case r.inc1:
-            r.i.num[r.inc1] = i; 
-            break;
-        case r.inc2:
-            r.i.num[r.inc2] = i;
-            r.inc1 = r.inc2; 
-            break;
-        }
-        switch (numPos) {
-        case r.inc1:
-            r.i.num[r.inc1] = numPos;
-            break;
-        case r.inc2:
-            r.i.num[r.inc2] = numPos;
-            break;
-        }
-        return r; 
-    }
-
     void transpose(int column, int columnPos, int colorPos) {
         info data1 = createIndex(column, columnPos, 0);
         index data2 = data1.i;
@@ -197,7 +175,33 @@ private:
         transpose(column, comlumnPos, colorPos);
     }
 
-    void rotateRing() {} //TODO 
+    void rotateRing(index i1, int iP1, int cP1, int num1, index i2, int iP2, int cP2, int num2, index i3, int iP3, int cP3, int num3, index i4, int iP4, int cP4, int num4, index i5, int num5, int t1, int t2, int t3) {
+        Colors temp[N];
+        Colors temp2[N];
+        for (int i = 0; i < N; i++) {
+            i1.num[iP1] = std::abs(num1 - i);
+            i4.num[iP4] = std::abs(num4 - i);
+            temp[i] = cube[i1].colors[cP1];
+            cube[i1].colors[cP1] = cube[i4].colors[cP4];
+        }
+
+        for (int i = 0; i < N; i++) {
+            i2.num[iP2] = std::abs(num2 - i);
+            temp2[i] = cube[i2].colors[cP2];
+            cube[i2].colors[cP2] = temp[std::abs(t1 - i)];
+        }
+
+        for (int i = 0; i < N; i++) {
+            i3.num[iP3] = std::abs(num3 - i); 
+            temp[i] = cube[i3].colors[cP3];
+            cube[i3].colors[cP3] = temp2[std::abs(t2 - i)];
+        }
+
+        for (int i = 0; i < N; i++) {
+            i5.num[iP4] = std::abs(num5 - i); 
+            cube[i5].colors[cP4] = temp[std::abs(t3 - i)];
+        }
+    }   //TODO 
 
     inline void drawN(index i, bool b) {
         cube[i].draw = b;
@@ -465,81 +469,20 @@ public:
         Colors temp2[N];
         switch (D) {
         case countercw:
-            //std::cout << "CC" << std::endl;
-            //for (int i = 0; i < N; i++) {
-            //    temp[i] = cube[{column, i, 0}].colors[4];
-            //}
-            //for (int i = 0; i < N; i++) {
-            //    cube[{column, i, 0}].colors[4] = cube[{column, cube.size - 1, i}].colors[0];
-            //}
-            //for (int i = 0; i < N; i++) {
-            //    temp2[i] = cube[{column, 0, i}].colors[1];
-            //}
-            //for (int i = 0; i < N; i++) {
-            //    cube[{column, 0, cube.size - 1 - i}].colors[1] = temp[i];
-            //}
-            //for (int i = 0; i < N; i++) {
-            //    temp[i] = cube[{column, i, cube.size - 1}].colors[5];
-            //}
-            //for (int i = 0; i < N; i++) {
-            //    cube[{column, i, cube.size - 1}].colors[5] = temp2[i];
-            //}
-            //for (int i = 0; i < N; i++) {
-            //    cube[{column, cube.size - 1, cube.size - 1 - i}].colors[0] = temp[i];
-            //}
-            for (int i = 0; i < N; i++) {
-                temp[i] = cube[{column, i, 0}].colors[4];
-                cube[{column, i, 0}].colors[4] = cube[{column, cube.size - 1, i}].colors[0];
-            }
-
-            for (int i = 0; i < N; i++) {
-                temp2[i] = cube[{column, 0, cube.size - 1 - i}].colors[1];
-                cube[{column, 0, cube.size - 1 - i}].colors[1] = temp[i];
-            }
-
-            for (int i = 0; i < N; i++) {
-                temp[i] = cube[{column, i, cube.size - 1}].colors[5];
-                cube[{column, i, cube.size - 1}].colors[5] = temp2[cube.size - 1 - i];
-            }
-
-            for (int i = 0; i < N; i++) {
-                cube[{column, cube.size - 1, cube.size - 1 - i}].colors[0] = temp[i];
-            }
-            break;
+            rotateRing({ column,             0,             0 }, 1, 4, 0,
+                       { column,             0,             0 }, 2, 1, cube.size - 1,
+                       { column,             0, cube.size - 1 }, 1, 5, 0,
+                       { column, cube.size - 1,             0 }, 2, 0, 0,
+                       { column, cube.size - 1,             0 }, 0,
+                       0, cube.size - 1, cube.size - 1); 
             break;
         case clockwise:
-            //std::cout << "C" << std::endl;
-            for (int i = 0; i < N; i++) {
-                temp[i] = cube[{column, cube.size - 1, i}].colors[0]; 
-            }
-
-            for (int i = 0; i < N; i++) {
-                cube[{column, cube.size - 1, i}].colors[0] = cube[{column, i, 0}].colors[4];
-            }
-
-            for (int i = 0; i < N; i++) {
-                temp2[i] = cube[{column, i, cube.size - 1}].colors[5];
-            }
-
-            for (int i = 0; i < N; i++) {
-                cube[{column, cube.size - 1 - i, cube.size - 1}].colors[5] = temp[i];
-            }
-
-            for (int i = 0; i < N; i++) {
-                temp[i] = cube[{column, 0, cube.size - 1 - i}].colors[1]; 
-            }
-
-   /*         for (int i = 0; i < N; i++) {
-                cube[{column, 0, cube.size - 1 - i}].colors[1] = temp2[cube.size - 1 - i];
-            }*/
-
-            for (int i = 0; i < N; i++) {
-                cube[{column, 0, i}].colors[1] = temp2[i];
-            }
-
-            for (int i = 0; i < N; i++) {
-                cube[{column, i, 0}].colors[4] = temp[i];
-            }
+            rotateRing({ column, cube.size - 1,             0 }, 2, 0, 0, 
+                       { column,             0, cube.size - 1 }, 1, 5, 0, 
+                       { column,             0,             0 }, 2, 1, 0, 
+                       { column,             0,             0 }, 1, 4, 0, 
+                       { column,             0,             0 }, 0,
+                       cube.size - 1, 0, cube.size - 1);
             break;
         }
     }
@@ -549,62 +492,21 @@ public:
         Colors temp2[N];
         switch (D) {
             case countercw:
-                for (int i = 0; i < N; i++) {
-                    temp[i] = cube[{i, cube.size - 1, column}].colors[0];
-                }
-
-                for (int i = 0; i < N; i++) {
-                    cube[{i, cube.size - 1, column}].colors[0] = cube[{cube.size - 1, cube.size - 1 - i, column}].colors[3];
-                }
-
-                for (int i = 0; i < N; i++) {
-                    temp2[i] = cube[{0, i, column}].colors[2];
-                }
-
-                for (int i = 0; i < N; i++) {
-                    cube[{0, i, column}].colors[2] = temp[i];
-                }
-
-                for (int i = 0; i < N; i++) {
-                    temp[i] = cube[{i, 0, column}].colors[1]; 
-                }
-
-                for (int i = 0; i < N; i++) {
-                    cube[{cube.size - 1 - i, 0, column}].colors[1] = temp2[i];
-                }
-
-                for (int i = 0; i < N; i++) {
-                    cube[{cube.size - 1, i, column}].colors[3] = temp[i];
-                }
-                break;
+                rotateRing({             0, cube.size - 1, column }, 0, 0, 0,
+                           {             0,             0, column }, 1, 2, 0,
+                           {             0,             0, column }, 0, 1, 0,
+                           { cube.size - 1,             0, column }, 1, 3, cube.size - 1,
+                           { cube.size - 1,             0, column }, 0,
+                           0, cube.size - 1, 0); 
+                break; 
             case clockwise:
-                for (int i = 0; i < N; i++) {
-                    temp[i] = cube[{cube.size - 1, i, column}].colors[3];
-                }
+                rotateRing({ cube.size - 1,             0, column }, 1, 3, 0,
+                           {             0,             0, column }, 0, 1, 0,
+                           {             0,             0, column }, 1, 2, 0,
+                           {             0, cube.size - 1, column }, 0, 0, cube.size - 1,
+                           {             0, cube.size - 1, column }, 0,
+                           0, cube.size - 1, 0); 
 
-                for (int i = 0; i < N; i++) {
-                    cube[{cube.size - 1, i, column}].colors[3] = cube[{cube.size - 1 - i, cube.size - 1, column}].colors[0];
-                }
-
-                for (int i = 0; i < N; i++) {
-                    temp2[i] = cube[{i, 0, column}].colors[1];
-                }
-
-                for (int i = 0; i < N; i++) {
-                    cube[{i, 0, column}].colors[1] = temp[i];
-                }
-
-                for (int i = 0; i < N; i++) {
-                    temp[i] = cube[{0, i, column}].colors[2]; 
-                }
-
-                for (int i = 0; i < N; i++) {
-                    cube[{0, cube.size - 1 - i, column}].colors[2] = temp2[i];
-                }
-
-                for (int i = 0; i < N; i++) {
-                    cube[{i, cube.size - 1, column}].colors[0] = temp[i];
-                }
                 break; 
         }
     }
@@ -614,65 +516,44 @@ public:
         Colors temp2[N];
         switch (D) {
             case countercw:
-                for (int i = 0; i < N; i++) {
-                    temp[i] = cube[{cube.size - 1, column, i}].colors[3]; 
-                }
-
-                for (int i = 0; i < N; i++) {
-                    cube[{cube.size - 1, column, i}].colors[3] = cube[{i, column, 0}].colors[4];
-                }
-
-                for (int i = 0; i < N; i++) {
-                    temp2[i] = cube[{i, column, cube.size - 1}].colors[5];
-                }
-
-                // change
-                for (int i = 0; i < N; i++) {
-                    cube[{cube.size - 1 - i, column, cube.size - 1}].colors[5] = temp[i];
-                }
-
-                for (int i = 0; i < N; i++) {
-                    temp[i] = cube[{0, column, i}].colors[2];
-                }
-
-                for (int i = 0; i < N; i++) {
-                    cube[{0, column, i}].colors[2] = temp2[i];
-                }
-                
-                // change
-                for (int i = 0; i < N; i++) {
-                    cube[{cube.size - 1 - i, column, 0}].colors[4] = temp[i];
-                }
-                break;
+                rotateRing({ cube.size - 1, column,             0 }, 2, 3, 0,
+                           {             0, column, cube.size - 1 }, 0, 5, 0,
+                           {             0, column,             0 }, 2, 2, 0,
+                           {             0, column,             0 }, 0, 4, 0,
+                           {             0, column,             0 }, cube.size - 1,
+                           cube.size - 1, 0, 0); 
+                break; 
             case clockwise:
-                for (int i = 0; i < N; i++) {
-                    temp[i] = cube[{0, column, i}].colors[2];
-                }
+                //for (int i = 0; i < N; i++) {
+                //    temp[i] = cube[{0, column, i}].colors[2];
+                //}
+                //for (int i = 0; i < N; i++) {
+                //    cube[{0, column, i}].colors[2] = cube[{cube.size - 1 - i, column, 0}].colors[4];
+                //}
+                //for (int i = 0; i < N; i++) {
+                //    temp2[i] = cube[{i, column, cube.size - 1}].colors[5];
+                //}
+                //for (int i = 0; i < N; i++) {
+                //   cube[{i, column, cube.size - 1}].colors[5] = temp[i];
+                //}
+                //for (int i = 0; i < N; i++) {
+                //    temp[i] = cube[{cube.size - 1, column, i}].colors[3];
+                //}
+                //// change
+                //for (int i = 0; i < N; i++) {
+                //    cube[{cube.size - 1, column, cube.size - 1 - i}].colors[3] = temp2[i];
+                //}
+                //for (int i = 0; i < N; i++) {
+                //   cube[{i, column, 0}].colors[4] = temp[i];
+                //}
+                //break;
 
-                for (int i = 0; i < N; i++) {
-                    cube[{0, column, i}].colors[2] = cube[{cube.size - 1 - i, column, 0}].colors[4];
-                }
-
-                for (int i = 0; i < N; i++) {
-                    temp2[i] = cube[{i, column, cube.size - 1}].colors[5];
-                }
-
-                for (int i = 0; i < N; i++) {
-                   cube[{i, column, cube.size - 1}].colors[5] = temp[i];
-                }
-
-                for (int i = 0; i < N; i++) {
-                    temp[i] = cube[{cube.size - 1, column, i}].colors[3];
-                }
-
-                // change
-                for (int i = 0; i < N; i++) {
-                    cube[{cube.size - 1, column, cube.size - 1 - i}].colors[3] = temp2[i];
-                }
-
-                for (int i = 0; i < N; i++) {
-                   cube[{i, column, 0}].colors[4] = temp[i];
-                }
+                rotateRing({             0, column,             0 }, 2, 2, 0,
+                           {             0, column, cube.size - 1 }, 0, 5, 0,
+                           { cube.size - 1, column,             0 }, 2, 3, 0,
+                           {             0, column,             0 }, 0, 4, cube.size - 1,
+                           {             0, column,             0 }, 0,
+                           0, cube.size - 1, 0);
                 break;
         }
     }

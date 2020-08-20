@@ -197,7 +197,7 @@ int main()
     VertexArrayObject* VAOS[6] = { &vaoTop, &vaoBot, &vaoLeft, &vaoRight, &vaoFront, &vaoBack }; 
 
     Rcube<12>* rubikcube = new Rcube<12>();
-    int num = 11;
+    int num1 = 0, num2 = 0, num3 = 11;
 
     struct MovData {
         bool turn;
@@ -207,6 +207,8 @@ int main()
 
     MovData fb[] = { {true, countercw}, {false, countercw}, {true, clockwise}, {false, countercw} };
     MovData rb[] = { {false, countercw}, {true, clockwise}, {false, clockwise}, {true, countercw} };
+    MovData cb[] = { {true, clockwise}, {false, countercw}, {true, countercw}, {false, countercw} };
+
     int movIndex = 0; 
 
     /* Loop until the user closes the window */
@@ -215,6 +217,7 @@ int main()
         movIndex %= 4; 
         (*rubikcube).r = rb[movIndex].turn;
         (*rubikcube).cF = fb[movIndex].turn;
+        //(*rubikcube).cS = cb[movIndex].turn;
 
         float currentFrame = glfwGetTime();
         deltaTime = currentFrame - lastFrame;
@@ -240,13 +243,13 @@ int main()
                     if ((*rubikcube).cube[{i, j, k}].draw) {
                         glm::mat4 model = glm::mat4(1.0f); 
                         if ((*rubikcube).cF) {
-                            rubikcube->columnF(i, num, model, fb[movIndex].D);
+                            rubikcube->columnF(i, num1, model, fb[movIndex].D);
                         }
                         else if ((*rubikcube).cS) {
-                            rubikcube->columnS(k, num, model, clockwise);
+                            rubikcube->columnS(k, num2, model, cb[movIndex].D);
                         }
                         else if ((*rubikcube).r){
-                            rubikcube->row(j, num, model, rb[movIndex].D);
+                            rubikcube->row(j, num3, model, rb[movIndex].D);
                         }
                         model = glm::translate(model, glm::vec3(i * .5, j * .5, k * -.5));
                         shader.setMat4("model", model);
