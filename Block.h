@@ -524,30 +524,6 @@ public:
                            cube.size - 1, 0, 0); 
                 break; 
             case clockwise:
-                //for (int i = 0; i < N; i++) {
-                //    temp[i] = cube[{0, column, i}].colors[2];
-                //}
-                //for (int i = 0; i < N; i++) {
-                //    cube[{0, column, i}].colors[2] = cube[{cube.size - 1 - i, column, 0}].colors[4];
-                //}
-                //for (int i = 0; i < N; i++) {
-                //    temp2[i] = cube[{i, column, cube.size - 1}].colors[5];
-                //}
-                //for (int i = 0; i < N; i++) {
-                //   cube[{i, column, cube.size - 1}].colors[5] = temp[i];
-                //}
-                //for (int i = 0; i < N; i++) {
-                //    temp[i] = cube[{cube.size - 1, column, i}].colors[3];
-                //}
-                //// change
-                //for (int i = 0; i < N; i++) {
-                //    cube[{cube.size - 1, column, cube.size - 1 - i}].colors[3] = temp2[i];
-                //}
-                //for (int i = 0; i < N; i++) {
-                //   cube[{i, column, 0}].colors[4] = temp[i];
-                //}
-                //break;
-
                 rotateRing({             0, column,             0 }, 2, 2, 0,
                            {             0, column, cube.size - 1 }, 0, 5, 0,
                            { cube.size - 1, column,             0 }, 2, 3, 0,
