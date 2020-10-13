@@ -1,5 +1,6 @@
 #pragma once 
 #include <iostream> 
+#include <vector>
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 #include <glm\ext\vector_float3.hpp>
@@ -17,9 +18,17 @@ enum Colors { BLUE = 0, RED = 1, GREEN = 2, YELLOW = 3 ,ORANGE = 4, WHITE = 5, V
 
 enum Direction { clockwise, countercw };
 
+enum moveType { columnF, columnS, row };
+
 struct info {
     index i; 
     int inc1, inc2; 
+};
+
+struct MovData {
+    moveType m;
+    Direction D;
+    int num; 
 };
 
 template<class T, int N>
@@ -81,8 +90,13 @@ public:
         }
     }
 
-    ~Block() {}
+    ~Block() = default; 
 
+};
+
+class Instructions {
+    std::vector<MovData> moves; 
+   
 };
 
 template<int N>
@@ -90,26 +104,7 @@ class Rcube {
 
 private:
 
-    void rotate(glm::mat4& model, glm::vec3 axis, glm::vec3 trans, float dRot) {
-        model = glm::translate(model, trans);
-        model = glm::rotate_slow(model, glm::radians(dRot), axis);
-        model = glm::translate(model, -trans);
-    }
-
-    void cornersConstructor(index i, index p, Colors x, Colors y, Colors z) {
-        cube[i].draw = true;
-        cube[i].colors[p.x] = x;
-        cube[i].colors[p.y] = y;
-        cube[i].colors[p.z] = z;
-    }
-
-    void edgesConstructor(index i, int px, int py, Colors x, Colors y) {
-        cube[i].draw = true;
-        cube[i].colors[px] = x;
-        cube[i].colors[py] = y;
-    }
-
-    void middlesConstructor(index i, int px, Colors x) {
+    void faceConstructor(index i, int px, Colors x) {
         cube[i].draw = true;
         cube[i].colors[px] = x;
     }
@@ -250,6 +245,12 @@ private:
         }
     }
 
+    void rotate(glm::mat4& model, glm::vec3 axis, glm::vec3 trans, float dRot) {
+        model = glm::translate(model, trans);
+        model = glm::rotate_slow(model, glm::radians(dRot), axis);
+        model = glm::translate(model, -trans);
+    }
+
     void selectRotation(Direction D, glm::mat4& model, glm::vec3 r, glm::vec3 t, float angle) {
         switch (D) {
         case clockwise:
@@ -307,98 +308,34 @@ private:
 
 public:
     array3d<Block, N> cube;
-    float move = (cube.size - 1) * .25;
+    const float move = (cube.size - 1) * .25;
     float dRot = 0.0f;
     bool current = false, cF = false, cS = false, r = false;
 
     Rcube() {
 
-        // corners
-        {
-            // F Bo L 
-            cornersConstructor({ 0, 0, 0 }, { 1, 2, 4 }, GREEN, ORANGE, WHITE);
+        for (int i = 0; i < N; i++) {
+            for (int j = 0; j < N; j++) {
+                // T Face 
+                faceConstructor({ i, N - 1, j }, 0, BLUE);
 
-            // Ba Bo L
-            cornersConstructor({ 0, 0, N - 1 }, { 1, 2, 5}, GREEN, ORANGE, YELLOW);
+                // Bo Face 
+                faceConstructor({ i, 0, j }, 1, GREEN);
 
-            // F T L 
-            cornersConstructor({ 0, N - 1, 0 }, { 0, 2, 4 }, BLUE, ORANGE, WHITE);
+                // L Face
+                faceConstructor({ 0, i, j }, 2, ORANGE);
 
-            // Ba T L
-            cornersConstructor({ 0, N - 1, N - 1 }, { 0, 2, 5 }, BLUE, ORANGE, YELLOW);
+                // R  Face
+                faceConstructor({ N - 1, i, j }, 3, RED);
 
-            // F Bo R
-            cornersConstructor({ N - 1, 0, 0 }, { 1, 3, 4 }, GREEN, RED, WHITE);
+                // F Face 
+                faceConstructor({ i, j, 0 }, 4, WHITE);
 
-            // Ba Bo R
-            cornersConstructor({ N - 1, 0, N - 1 }, { 1, 3, 5 }, GREEN, RED, YELLOW);
-
-            // F T R
-            cornersConstructor({ N - 1, N - 1, 0 }, { 0, 3, 4 }, BLUE, RED, WHITE);
-
-            // Ba T R
-            cornersConstructor({ N - 1, N - 1, N - 1 }, { 0, 3, 5 }, BLUE, RED, YELLOW);
-        }
-
-        // middles and edges 
-        for (int i = 1; i < N - 1; i++) {
-            // F Bo edge 
-            edgesConstructor({ i, 0, 0 }, 1, 4, GREEN, WHITE);
-
-            // F T edge
-            edgesConstructor({ i, N - 1, 0 }, 0, 4, BLUE, WHITE);
-
-            // Ba Bo edge
-            edgesConstructor({ i, 0, N - 1 }, 1, 5, GREEN, YELLOW);
-
-            // Ba T edge 
-            edgesConstructor({ i, N - 1, N - 1 }, 0, 5, BLUE, YELLOW);
-
-            // F L edge
-            edgesConstructor({ 0, i, 0 }, 2, 4, ORANGE, WHITE);
-
-            // Ba L edge
-            edgesConstructor({ 0, i, N - 1 }, 2, 5, ORANGE, YELLOW);
-
-            // F R edge
-            edgesConstructor({ N - 1, i, 0 }, 3, 4, RED, WHITE);
-
-            // Ba R edge 
-            edgesConstructor({ N - 1, i, N - 1 }, 3, 5, RED, YELLOW);
-
-            // L Bo edge 
-            edgesConstructor({ 0, 0, i }, 1, 2, GREEN, ORANGE);
-
-            // R Bo edge 
-            edgesConstructor({ N - 1, 0, i }, 1, 3, GREEN, RED);
-
-            // L T edge 
-            edgesConstructor({ 0, N - 1, i }, 0, 2, BLUE, ORANGE);
-
-            // R T edge 
-            edgesConstructor({ N - 1, N - 1, i }, 0, 3, BLUE, RED);
-
-            for (int j = 1; j < N - 1; j++) {
-                // T Middle 
-                middlesConstructor({ i, N - 1, j }, 0, BLUE);
-
-                // Bo Middle 
-                middlesConstructor({ i, 0, j }, 1, GREEN);
-
-                // L Middle
-                middlesConstructor({ 0, i, j }, 2, ORANGE);
-
-                // R  Middle
-                middlesConstructor({ N - 1, i, j }, 3, RED);
-
-                // F Middle 
-                middlesConstructor({ i, j, 0 }, 4, WHITE);
-
-                // Ba Middle
-                middlesConstructor({ i, j, N - 1 }, 5, YELLOW);
+                // Ba Face
+                faceConstructor({ i, j, N - 1 }, 5, YELLOW);
             }
         }
-
+        
     }
 
     void colorsSideF(int column, Direction D) {
@@ -559,6 +496,6 @@ public:
         }
     }
 
-    ~Rcube() {}
+    ~Rcube() = default; 
 
 };
