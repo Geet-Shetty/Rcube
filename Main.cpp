@@ -12,8 +12,6 @@
 #include "vbo.h"
 #include "voa.h"
 #include "Camera.h"
-
-#include "GLCall.h"
 #include "Block.h"
 
 // settings
@@ -199,15 +197,14 @@ int main()
     Rcube<12>* rubikcube = new Rcube<12>();
     int num1 = 0, num2 = 0, num3 = 11;
 
-    struct MovData {
+    struct MovData1 {
         bool turn;
-        Direction D; 
+        Direction D;
     };
 
-
-    MovData fb[] = { {true, countercw}, {false, countercw}, {true, clockwise}, {false, countercw} };
-    MovData rb[] = { {false, countercw}, {true, clockwise}, {false, clockwise}, {true, countercw} };
-    MovData cb[] = { {true, clockwise}, {false, countercw}, {true, countercw}, {false, countercw} };
+    MovData1 fb[] = { {true, countercw}, {false, countercw}, {true, clockwise}, {false, countercw} };
+    MovData1 rb[] = { {false, countercw}, {true, clockwise}, {false, clockwise}, {true, countercw} };
+    MovData1 cb[] = { {true, clockwise}, {false, countercw}, {true, countercw}, {false, countercw} };
 
     int movIndex = 0; 
 
@@ -220,6 +217,7 @@ int main()
         //(*rubikcube).cS = cb[movIndex].turn;
 
         float currentFrame = glfwGetTime();
+        std::cout << currentFrame << std::endl; 
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
         processInput(window.getWindow());
@@ -377,6 +375,7 @@ void drawFace(Texture* faceTextures[7], Colors C, VertexArrayObject& vao, bool d
     vao.bind();
     glDrawArrays(GL_TRIANGLES, 0, 6);
 }
+
 // draw block
 void drawBlock(Texture* faceTextures[7], Block B, VertexArrayObject* VAOS[6]) {
     glActiveTexture(GL_TEXTURE0);
