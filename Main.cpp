@@ -1,8 +1,5 @@
 #include <iostream>
-#include <array>
 
-
-#if 1
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
@@ -194,6 +191,7 @@ int main()
     Texture* faceTextures[7] = { &blue, &green, &orange, &red, &white, &yellow, &black };
     VertexArrayObject* VAOS[6] = { &vaoTop, &vaoBot, &vaoLeft, &vaoRight, &vaoFront, &vaoBack }; 
 
+  
     Rcube<12>* rubikcube = new Rcube<12>();
     int num1 = 0, num2 = 0, num3 = 11;
 
@@ -217,7 +215,6 @@ int main()
         //(*rubikcube).cS = cb[movIndex].turn;
 
         float currentFrame = glfwGetTime();
-        std::cout << currentFrame << std::endl; 
         deltaTime = currentFrame - lastFrame;
         lastFrame = currentFrame;
         processInput(window.getWindow());
@@ -337,7 +334,6 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
     if (fov > 45.0f)
         fov = 45.0f;
 }
-#endif
 
 // select correct texture to bind and draw face
 void drawFace(Texture* faceTextures[7], Colors C, VertexArrayObject& vao, bool drawVoid) {
@@ -379,12 +375,7 @@ void drawFace(Texture* faceTextures[7], Colors C, VertexArrayObject& vao, bool d
 // draw block
 void drawBlock(Texture* faceTextures[7], Block B, VertexArrayObject* VAOS[6]) {
     glActiveTexture(GL_TEXTURE0);
-    drawFace(faceTextures, B.colors[0], *VAOS[0], B.drawVoid);
-    drawFace(faceTextures, B.colors[1], *VAOS[1], B.drawVoid);
-    drawFace(faceTextures, B.colors[2], *VAOS[2], B.drawVoid);
-    drawFace(faceTextures, B.colors[3], *VAOS[3], B.drawVoid);
-    drawFace(faceTextures, B.colors[4], *VAOS[4], B.drawVoid);
-    drawFace(faceTextures, B.colors[5], *VAOS[5], B.drawVoid);
+    for (int i = 0; i < 6; i++) {
+        drawFace(faceTextures, B.colors[i], *VAOS[i], B.drawVoid);
+    }
 }
-
-

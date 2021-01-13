@@ -104,7 +104,7 @@ class Rcube {
 
 private:
 
-    void faceConstructor(index i, int px, Colors x) {
+    inline void faceConstructor(index i, int px, Colors x) {
         cube[i].draw = true;
         cube[i].colors[px] = x;
     }
